@@ -30,13 +30,13 @@ jobs:
             #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
             #       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             #       aws-region: us-west-2
-            - name: Generate Dynamic Config
-              id: generate-config
-              run: |
-                  jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" \
-                      --arg UUID "$(uuidgen)" \
-                      '.CallerReference = $UUID | .Origins.Items[0].OriginPath = "/pr-previews/\($PR_NUMBER)" | .Comment = "This is for PR Review \($PR_NUMBER)"' \
-                      config.json > updated-config.json
+            # - name: Generate Dynamic Config
+            #   id: generate-config
+            #   run: |
+            #       jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" \
+            #           --arg UUID "$(uuidgen)" \
+            #           '.CallerReference = $UUID | .Origins.Items[0].OriginPath = "/pr-previews/\($PR_NUMBER)" | .Comment = "This is for PR Review \($PR_NUMBER)"' \
+            #           config.json > updated-config.json
 
             # - name: Create CloudFront Distribution
             #   id: create-cf-distribution
