@@ -10,7 +10,7 @@ description: Install Playwright and dependencies with cache
 inputs:
     working-directory:
         description: Where to install Playwright
-        default: ${{ inputs.working-directory }}
+        default: ${{ github.workspace }}
     browsers:
         description: Browsers to install
         default: chromium webkit firefox
