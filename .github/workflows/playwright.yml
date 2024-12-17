@@ -1,0 +1,182 @@
+# This GitHub Actions workflow is designed to run Playwright tests on pull requests
+# targeting the `main` and `staging` branches. It sets up a Node.js environment,
+# installs dependencies, runs Playwright tests, and handles test results, including
+# caching, reporting, and commenting on pull requests if visual snapshot differences
+# are detected.
+
+name: Playwright Tests
+
+# Ensures that only one instance of this workflow runs at a time for a given branch,
+# canceling any in-progress runs if a new one is triggered.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Triggers the workflow on pull requests to the `main` and `staging` branches.
+on:
+  pull_request:
+    paths:
+      - src/**
+      - tests/**
+
+jobs:
+  setup-and-run-testcases:
+    # Sets a timeout of 10 minutes for the job.
+    timeout-minutes: 10
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.number }}
+    # Specifies the runner environment as the latest Ubuntu version.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      # Checks out the repository code.
+      - uses: actions/checkout@v4
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Fetch PR Comments
+        id: fetch-comments
+        run: |
+          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments -q '.comments[].body | select(contains("CloudFront Distribution ID"))')
+          COMMENT_DOMAIN=$(gh pr view ${{ github.event.pull_request.number }} --json comments -q '.comments[].body | select(contains("Domain Name"))')
+          DISTRIBUTION_ID=$(echo "$COMMENT" | grep "CloudFront Distribution ID" | awk '{print $4}')
+          DISTRIBUTION_DOMAIN=$(echo "$COMMENT" | grep "Domain Name" | awk -F'[][]' '{print $2}')
+
+          echo "DISTRIBUTION_ID=$DISTRIBUTION_ID" >> $GITHUB_ENV
+          echo "DISTRIBUTION_DOMAIN=$DISTRIBUTION_DOMAIN" >> $GITHUB_ENV
+
+      - name: Verify Distribution ID
+        continue-on-error: false
+        run: |
+          echo "${{env.DISTRIBUTION_ID}}" || exit 1
+          echo "${{env.DISTRIBUTION_DOMAIN}}" || exit 1
+          echo "Distribution ID is ${{ env.DISTRIBUTION_ID }}"
+          echo "DISTRIBUTION DOMAIN is ${{ env.DISTRIBUTION_DOMAIN }}"
+
+      # Sets up Node.js using the latest LTS version.
+      - uses: actions/setup-node@v4
+
+        with:
+          node-version: lts/*
+          # Optionally specify a specific Node.js version or cache strategy.
+      - uses: altinukshini/deployment-action@releases/v1
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          target_url: https://${{env.DISTRIBUTION_DOMAIN}}
+          environment: development
+      # Caches `node_modules` and Yarn cache to speed up subsequent runs.
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/yarn
+            yarn.lock
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Installs Yarn globally and sets up npm configuration for a private registry.
+      - name: Installing Yarn and setting env.
+        run: npm install -g pnpm
+
+      # Installs project dependencies using Yarn.
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Build Project
+        run: yarn build
+
+      # - name: Upload to S3
+      #   run: |
+      #     aws s3 sync ./dist s3://bucket-customerportal-dev-broadlumex-api/pr-previews/${{env.PR_NUMBER}}/
+      #     aws cloudfront create-invalidation --distribution-id ${{env.DISTRIBUTION_ID}} --paths '/*'
+      # - name: Update deployment status (success)
+      #   if: success()
+      #   uses: altinukshini/deployment-status@releases/v1
+      #   with:
+      #     token: "${{ secrets.GITHUB_TOKEN }}"
+      #     target_url: https://${{env.DISTRIBUTION_DOMAIN}}
+      #     state: "success"
+      #     deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+      # - name: Update deployment status (failure)
+      #   if: failure()
+      #   uses: altinukshini/deployment-status@releases/v1
+      #   with:
+      #     token: "${{ secrets.GITHUB_TOKEN }}"
+      #     target_url: https://${{env.DISTRIBUTION_DOMAIN}}
+      #     state: "failure"
+      #     deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+      # Installs Playwright using a custom action.
+      - name: Install Playwright
+        id: install-playwright
+        uses: ./.github/actions/install-playwright
+
+      # Outputs the installed Playwright version.
+      - run: |
+          echo Playwright version: "${{ steps.install-playwright.outputs.version }}"
+
+      # Outputs whether Playwright was cached.
+      - run: |
+          echo Playwright cached: "${{ steps.install-playwright.outputs.cache-hit }}"
+
+      - name: Run Playwright tests
+        run: |
+          yarn test | tee output.log
+          if grep -q -e "Error: A snapshot doesn't exist at" -e "Screenshot comparison failed" -e "pixels) are different" output.log; then
+            echo "Playwright tests failed due to a snapshot issue."
+            echo "SNAPSHOT_DIFFERENCES=true" >> $GITHUB_ENV
+            exit 1
+          elif grep -q "failed" output.log; then
+            echo "Playwright tests failed due to a non-snapshot issue."
+            exit 1
+          fi
+
+      # Generates a summary report of the Playwright test results.
+      - uses: daun/playwright-report-summary@v3
+        if: always()
+        with:
+          report-file: results.json
+          name: Comment on PR with report link
+
+      # Comments on the pull request if snapshot differences are detected.
+      - uses: thollander/actions-comment-pull-request@v3
+        if: ${{ failure() && env.SNAPSHOT_DIFFERENCES == 'true' }}
+        with:
+          message: |
+            ### Playwright visual snapshot differences were detected.
+            View the [Playwright report](${{ steps.artifact-upload.outputs.artifact-url }}) to review the visual differences.
+            **To approve the snapshot changes and update the snapshots, please comment:** /approve-snapshots
+
+      # The following steps for generating and reporting NYC coverage are commented out.
+      # - name: Generate NYC report
+      #   run: |
+      #       npx nyc report \
+      #         --reporter json-summary \
+      #         --report-dir nyc-coverage-report \
+      #         --exclude-after-remap false
+
+      # - name: Report NYC coverage
+      #   uses: sidx1024/report-nyc-coverage-github-action@v1.2.7
+      #   with:
+      #       # Path to coverage file generated by "nyc report".
+      #       coverage_file: 'nyc-coverage-report/coverage-summary.json'
+
+      # Uploads the Playwright report as an artifact, retaining it for 7 days.
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
