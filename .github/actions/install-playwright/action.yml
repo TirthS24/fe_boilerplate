@@ -56,9 +56,15 @@ runs:
         - name: Cache Playwright
           id: cache
           uses: actions/cache@v4
+          # with:
+          #     path: |
+          #       ${{ inputs.working-directory }}
+          #       /home/runner/.cache
+          #     key: playwright-${{ env.PLAYWRIGHT_VERSION }}
           with:
-              path: ${{ inputs.working-directory }}/node-modules
-              key: playwright-${{ env.PLAYWRIGHT_VERSION }}
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
 
         # Installs Playwright and its dependencies if the cache is not found.
         - name: Install Playwright and its dependencies
