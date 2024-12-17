@@ -24,12 +24,12 @@ jobs:
             # Checks out the repository code.
             - uses: actions/checkout@v4
 
-            - name: Configure AWS Credentials
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                  aws-region: us-west-2
+            # - name: Configure AWS Credentials
+            #   uses: aws-actions/configure-aws-credentials@v4
+            #   with:
+            #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            #       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            #       aws-region: us-west-2
             - name: Generate Dynamic Config
               id: generate-config
               run: |
@@ -38,39 +38,39 @@ jobs:
                       '.CallerReference = $UUID | .Origins.Items[0].OriginPath = "/pr-previews/\($PR_NUMBER)" | .Comment = "This is for PR Review \($PR_NUMBER)"' \
                       config.json > updated-config.json
 
-            - name: Create CloudFront Distribution
-              id: create-cf-distribution
-              run: |
-                  DIST_ID=$(aws cloudfront create-distribution --distribution-config file://updated-config.json --query 'Distribution.Id' --output text)
-                  DIST_DOMAIN=$(aws cloudfront get-distribution --id "$DIST_ID" --query 'Distribution.DomainName' --output text)
-                  echo "DISTRIBUTION_ID=$DIST_ID" >> $GITHUB_OUTPUT
-                  echo "DISTRIBUTION_DOMAIN=$DIST_DOMAIN" >> $GITHUB_OUTPUT
-                  echo "CloudFront Distribution ID: $DIST_ID, Domain Name: $DIST_DOMAIN"
+            # - name: Create CloudFront Distribution
+            #   id: create-cf-distribution
+            #   run: |
+            #       DIST_ID=$(aws cloudfront create-distribution --distribution-config file://updated-config.json --query 'Distribution.Id' --output text)
+            #       DIST_DOMAIN=$(aws cloudfront get-distribution --id "$DIST_ID" --query 'Distribution.DomainName' --output text)
+            #       echo "DISTRIBUTION_ID=$DIST_ID" >> $GITHUB_OUTPUT
+            #       echo "DISTRIBUTION_DOMAIN=$DIST_DOMAIN" >> $GITHUB_OUTPUT
+            #       echo "CloudFront Distribution ID: $DIST_ID, Domain Name: $DIST_DOMAIN"
 
-            - name: Add S3 Permissions
-              run: |
-                  aws s3api get-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --query Policy --output text | \
-                  jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" \
-                        --arg dist_id "${{steps.create-cf-distribution.outputs.DISTRIBUTION_ID}}" '.Statement += [
-                      {
-                          "Sid": "BMS-Portal-PR-preview-\($PR_NUMBER)",
-                          "Effect": "Allow",
-                          "Principal": {
-                              "Service": "cloudfront.amazonaws.com"
-                          },
-                          "Action": "s3:GetObject",
-                          "Resource": "arn:aws:s3:::bucket-customerportal-dev-broadlumex-api/*",
-                          "Condition": {
-                              "StringEquals": {
-                                  "AWS:SourceArn": "arn:aws:cloudfront::061402505327:distribution/\($dist_id)"
-                              }
-                          }
-                      }
-                  ]' > updated-bucket-policy.json
-                  aws s3api put-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --policy file://updated-bucket-policy.json
+            # - name: Add S3 Permissions
+            #   run: |
+            #       aws s3api get-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --query Policy --output text | \
+            #       jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" \
+            #             --arg dist_id "${{steps.create-cf-distribution.outputs.DISTRIBUTION_ID}}" '.Statement += [
+            #           {
+            #               "Sid": "BMS-Portal-PR-preview-\($PR_NUMBER)",
+            #               "Effect": "Allow",
+            #               "Principal": {
+            #                   "Service": "cloudfront.amazonaws.com"
+            #               },
+            #               "Action": "s3:GetObject",
+            #               "Resource": "arn:aws:s3:::bucket-customerportal-dev-broadlumex-api/*",
+            #               "Condition": {
+            #                   "StringEquals": {
+            #                       "AWS:SourceArn": "arn:aws:cloudfront::061402505327:distribution/\($dist_id)"
+            #                   }
+            #               }
+            #           }
+            #       ]' > updated-bucket-policy.json
+            #       aws s3api put-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --policy file://updated-bucket-policy.json
 
-            - name: Comment CloudFront Details on PR
-              run: |
-                  gh pr comment ${{ github.event.pull_request.number }} \
-                  --body "CloudFront Distribution ID: ${{ steps.create-cf-distribution.outputs.DISTRIBUTION_ID }}  
-                  Domain Name: [${{ steps.create-cf-distribution.outputs.DISTRIBUTION_DOMAIN }}](${{ steps.create-cf-distribution.outputs.DISTRIBUTION_DOMAIN }})"
+            # - name: Comment CloudFront Details on PR
+            #   run: |
+            #       gh pr comment ${{ github.event.pull_request.number }} \
+            #       --body "CloudFront Distribution ID: ${{ steps.create-cf-distribution.outputs.DISTRIBUTION_ID }}  
+            #       Domain Name: [${{ steps.create-cf-distribution.outputs.DISTRIBUTION_DOMAIN }}](${{ steps.create-cf-distribution.outputs.DISTRIBUTION_DOMAIN }})"
