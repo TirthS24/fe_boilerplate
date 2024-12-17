@@ -60,8 +60,9 @@ runs:
               # path: ${{ inputs.working-directory }}
               path: | 
                 ${{ inputs.working-directory }}
-                /home/runner/.cache/ms-playwright
-              key: playwright-${{ env.PLAYWRIGHT_VERSION }}
+                /home/runner/.cache
+              # key: playwright-${{ env.PLAYWRIGHT_VERSION }}
+              key: ms-playwright
 
         # Installs Playwright and its dependencies if the cache is not found.
         - name: Install Playwright and its dependencies
