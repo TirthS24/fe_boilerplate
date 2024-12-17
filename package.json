@@ -25,7 +25,7 @@
 		"storybook": "storybook dev -p 6006",
 		"storybook:setup": "node node_modules/@storybook/addon-styling/bin/postinstall.js",
 		"storybook:build": "storybook build",
-		"test": "yarn playwright test",
+		"test": "playwright test",
 		"posttest": "npx nyc report",
 		"precommit": "lint-staged",
 		"pretest": "rm -rf coverage .nyc_output playwright-report",

@@ -126,20 +126,10 @@ If you'd like to run all tests, Unit and E2E alike, execute the following comman
 pnpm run test
 ```
 
-### Unit Testing
-
-When running unit test scripts, it is assumed that unit tests will be colocated with the source files. Take a look at the placeholder README file in `src/components` for [an example](src/components/README.md).
-
-If you'd like to execute unit tests specifically, the below command will execute vitest:
-
-```
-pnpm run test:unit
-```
-
 If instead you are interested in coverage reporting, run:
 
 ```
-pnpm run test:unit:coverage
+pnpm run show-coverage
 ```
 
 All unit tests run in watch mode by default. If you'd like to disable watch mode, change the package.json test scripts with the following
