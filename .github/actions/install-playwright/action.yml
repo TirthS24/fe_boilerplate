@@ -57,7 +57,10 @@ runs:
           id: cache
           uses: actions/cache@v4
           with:
-              path: ${{ inputs.working-directory }}
+              # path: ${{ inputs.working-directory }}
+              path: | 
+                ${{ inputs.working-directory }}
+                /home/runner/.cache/ms-playwright
               key: playwright-${{ env.PLAYWRIGHT_VERSION }}
 
         # Installs Playwright and its dependencies if the cache is not found.
