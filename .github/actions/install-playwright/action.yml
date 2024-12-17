@@ -10,7 +10,7 @@ description: Install Playwright and dependencies with cache
 inputs:
     working-directory:
         description: Where to install Playwright
-        default: ./
+        default: ${{ inputs.working-directory }}
     browsers:
         description: Browsers to install
         default: chromium webkit firefox
@@ -57,7 +57,7 @@ runs:
           id: cache
           uses: actions/cache@v4
           with:
-              path: ./
+              path: ${{ inputs.working-directory }}
               key: playwright-${{ env.PLAYWRIGHT_VERSION }}
 
         # Installs Playwright and its dependencies if the cache is not found.
