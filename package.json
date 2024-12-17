@@ -1,6 +1,6 @@
 {
 	"name": "vite-react-boilerplate",
-	"author": "Ricardo Valdovinos <ricardovaldovinos1996@gmail.com>",
+	"author": "Dhaval Javia <dhavalj@york.ie>",
 	"description": "A production ready, batteries included starter template for Vite + React projects",
 	"keywords": [
 		"vite",
@@ -11,7 +11,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/RicardoValdovinos/vite-react-boilerplate"
+		"url": "https://github.com/dhavaljyorkie/react-boilerplate.git"
 	},
 	"license": "MIT",
 	"version": "1.0.0",
