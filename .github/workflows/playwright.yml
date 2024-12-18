@@ -38,6 +38,13 @@ jobs:
       # Checks out the repository code.
       - uses: actions/checkout@v4
 
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+
       - name: Authenticate GitHub CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
@@ -79,14 +86,14 @@ jobs:
         with:
           path: |
             node_modules
-            ~/.cache/yarn
-            yarn.lock
-          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+            ~/.cache/pnpm
+            pnpm-lock.yaml
+          key: ${{ runner.os }}-node-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       # Installs Yarn globally and sets up npm configuration for a private registry.
-      - name: Installing Yarn and setting env.
+      - name: Installing pnpm and setting env.
         run: npm install -g pnpm
 
       # Installs project dependencies using Yarn.
@@ -94,29 +101,29 @@ jobs:
         run: pnpm i
 
       - name: Build Project
-        run: yarn build
+        run: pnpm run build
 
-      # - name: Upload to S3
-      #   run: |
-      #     aws s3 sync ./dist s3://bucket-customerportal-dev-broadlumex-api/pr-previews/${{env.PR_NUMBER}}/
-      #     aws cloudfront create-invalidation --distribution-id ${{env.DISTRIBUTION_ID}} --paths '/*'
-      # - name: Update deployment status (success)
-      #   if: success()
-      #   uses: altinukshini/deployment-status@releases/v1
-      #   with:
-      #     token: "${{ secrets.GITHUB_TOKEN }}"
-      #     target_url: https://${{env.DISTRIBUTION_DOMAIN}}
-      #     state: "success"
-      #     deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+      - name: Upload to S3
+        run: |
+          aws s3 sync ./dist s3://bucket-customerportal-dev-broadlumex-api/pr-previews/${{env.PR_NUMBER}}/
+          aws cloudfront create-invalidation --distribution-id ${{env.DISTRIBUTION_ID}} --paths '/*'
+      - name: Update deployment status (success)
+        if: success()
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          target_url: https://${{env.DISTRIBUTION_DOMAIN}}
+          state: "success"
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
 
-      # - name: Update deployment status (failure)
-      #   if: failure()
-      #   uses: altinukshini/deployment-status@releases/v1
-      #   with:
-      #     token: "${{ secrets.GITHUB_TOKEN }}"
-      #     target_url: https://${{env.DISTRIBUTION_DOMAIN}}
-      #     state: "failure"
-      #     deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          target_url: https://${{env.DISTRIBUTION_DOMAIN}}
+          state: "failure"
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
 
       # Installs Playwright using a custom action.
       - name: Install Playwright
@@ -133,7 +140,7 @@ jobs:
 
       - name: Run Playwright tests
         run: |
-          yarn test | tee output.log
+          pnpm run test | tee output.log
           if grep -q -e "Error: A snapshot doesn't exist at" -e "Screenshot comparison failed" -e "pixels) are different" output.log; then
             echo "Playwright tests failed due to a snapshot issue."
             echo "SNAPSHOT_DIFFERENCES=true" >> $GITHUB_ENV
