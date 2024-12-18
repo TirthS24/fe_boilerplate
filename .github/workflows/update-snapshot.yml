@@ -100,20 +100,20 @@ jobs:
           yarn test --update-snapshots
           git status
 
-      - name: Commit and push updated snapshots
-        run: |
-          git status
-          git config --global user.name citestcase
-          git config --global user.email testcase@broadlume.com
-          git remote set-url origin git@github.com:${{ github.repository }}
-          git rev-parse --abbrev-ref HEAD
-          git rev-parse HEAD
-          git status
-          git fetch
-          git pull
-          git add .
-          git commit -m 'fix: update e2e snapshots' --allow-empty
-          git push origin ${{steps.comment-branch.outputs.head_ref}}
+      # - name: Commit and push updated snapshots
+      #   run: |
+      #     git status
+      #     git config --global user.name citestcase
+      #     git config --global user.email testcase@broadlume.com
+      #     git remote set-url origin git@github.com:${{ github.repository }}
+      #     git rev-parse --abbrev-ref HEAD
+      #     git rev-parse HEAD
+      #     git status
+      #     git fetch
+      #     git pull
+      #     git add .
+      #     git commit -m 'fix: update e2e snapshots' --allow-empty
+      #     git push origin ${{steps.comment-branch.outputs.head_ref}}
 
       - name: Comment success
         uses: thollander/actions-comment-pull-request@v3

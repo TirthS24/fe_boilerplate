@@ -10,7 +10,7 @@ description: Install Playwright and dependencies with cache
 inputs:
     working-directory:
         description: Where to install Playwright
-        default: ./
+        default: ~/
     browsers:
         description: Browsers to install
         default: chromium webkit firefox
@@ -57,8 +57,9 @@ runs:
           id: cache
           uses: actions/cache@v4
           with:
-              path: ./
-              key: playwright-${{ env.PLAYWRIGHT_VERSION }}
+              path: ~/.cache/ms-playwright
+              # key: playwright-${{ env.PLAYWRIGHT_VERSION }}
+              key: ${{ runner.os }}-playwright-${{ hashFiles('**/yarn.lock') }}
 
         # Installs Playwright and its dependencies if the cache is not found.
         - name: Install Playwright and its dependencies

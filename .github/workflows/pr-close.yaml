@@ -50,25 +50,25 @@ jobs:
                   echo "Distribution ID is ${{ env.DISTRIBUTION_ID }}"
                   echo "DISTRIBUTION DOMAIN is ${{ env.DISTRIBUTION_DOMAIN }}"
 
-            - name: Remove S3 Policy
-              run: |
-                  aws s3api get-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --query Policy --output text | jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" 'del(.Statement[] | select(.Sid == "BMS-Portal-PR-preview-\($PR_NUMBER)"))' > remove-cloudfront-policy.json
-                  aws s3api put-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --policy file://remove-cloudfront-policy.json
+            # - name: Remove S3 Policy
+            #   run: |
+            #       aws s3api get-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --query Policy --output text | jq --arg PR_NUMBER "${{ env.PR_NUMBER }}" 'del(.Statement[] | select(.Sid == "BMS-Portal-PR-preview-\($PR_NUMBER)"))' > remove-cloudfront-policy.json
+            #       aws s3api put-bucket-policy --bucket bucket-customerportal-dev-broadlumex-api --policy file://remove-cloudfront-policy.json
 
-            - name: Remove Files from S3
-              run: aws s3 rm --recursive s3://bucket-customerportal-dev-broadlumex-api/pr-previews/${{env.PR_NUMBER}}/
+            # - name: Remove Files from S3
+            #   run: aws s3 rm --recursive s3://bucket-customerportal-dev-broadlumex-api/pr-previews/${{env.PR_NUMBER}}/
 
-            - name: Disable Distribution
-              run: |
-                  aws cloudfront get-distribution-config --id ${{env.DISTRIBUTION_ID}} --query DistributionConfig > current-config.json
-                  # Modify the config to set Enabled to false
-                  cat current-config.json | jq '.Enabled = false' > disabled-config.json
+            # - name: Disable Distribution
+            #   run: |
+            #       aws cloudfront get-distribution-config --id ${{env.DISTRIBUTION_ID}} --query DistributionConfig > current-config.json
+            #       # Modify the config to set Enabled to false
+            #       cat current-config.json | jq '.Enabled = false' > disabled-config.json
 
-                  # Get the ETag
-                  ETAG=$(aws cloudfront get-distribution-config --id ${{env.DISTRIBUTION_ID}} --query 'ETag' --output text)
+            #       # Get the ETag
+            #       ETAG=$(aws cloudfront get-distribution-config --id ${{env.DISTRIBUTION_ID}} --query 'ETag' --output text)
 
-                  # Update the distribution
-                  aws cloudfront update-distribution \
-                      --id ${{env.DISTRIBUTION_ID}} \
-                      --distribution-config file://disabled-config.json \
-                      --if-match $ETAG
+            #       # Update the distribution
+            #       aws cloudfront update-distribution \
+            #           --id ${{env.DISTRIBUTION_ID}} \
+            #           --distribution-config file://disabled-config.json \
+            #           --if-match $ETAG
