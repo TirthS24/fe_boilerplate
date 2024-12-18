@@ -93,12 +93,8 @@ jobs:
         run: yarn
 
       - name: Install Playwright
-        id: install-playwright
-        uses: ./.github/actions/install-playwright
-
-      # - name: Install Playwright
-      #   run: npx playwright install --with-deps
-      #   if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Run Playwright tests
         run: |
