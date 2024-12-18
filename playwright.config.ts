@@ -30,10 +30,10 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: process.env.DISTRIBUTION_DOMAIN
-            ? `https://${process.env.DISTRIBUTION_DOMAIN}`
-            : 'http://localhost:5173',
-        // baseURL: 'https://dev.customerportal.bms.my.broadlume.com/sales',
+        // baseURL: process.env.DISTRIBUTION_DOMAIN
+        //     ? `https://${process.env.DISTRIBUTION_DOMAIN}`
+        //     : 'http://localhost:5173',
+        baseURL: 'https://dev.customerportal.bms.my.broadlume.com/sales',
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
         video: 'on',

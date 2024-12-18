@@ -38,7 +38,9 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ref: ${{ steps.comment-branch.outputs.head_ref }}
           persist-credentials: false
-      - uses: actions/cache@v4
+
+      - name: Check Cache for Playwright
+        uses: actions/cache@v4
         id: playwright-cache
         with:
           path: |
@@ -90,9 +92,13 @@ jobs:
       - name: Install dependencies
         run: yarn
 
-      - name: Install playwright deps
-        run: npx playwright install --with-deps
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - name: Install Playwright
+        id: install-playwright
+        uses: ./.github/actions/install-playwright
+
+      # - name: Install Playwright
+      #   run: npx playwright install --with-deps
+      #   if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Run Playwright tests
         run: |
@@ -103,8 +109,8 @@ jobs:
       - name: Commit and push updated snapshots
         run: |
           git status
-          git config --global user.name citestcase
-          git config --global user.email testcase@broadlume.com
+          git config --global user.name TirthS24
+          git config --global user.email tirths@york.ie
           git remote set-url origin git@github.com:${{ github.repository }}
           git rev-parse --abbrev-ref HEAD
           git rev-parse HEAD
