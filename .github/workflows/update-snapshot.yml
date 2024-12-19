@@ -45,7 +45,7 @@ jobs:
         with:
           path: |
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm.lock') }}
 
       # Set up SSH
       - name: Set up SSH
@@ -76,13 +76,13 @@ jobs:
         with:
           path: |
             node_modules
-            ~/.cache/yarn
-            yarn.lock
-          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+            ~/.cache/pnpm
+            pnpm.lock
+          key: ${{ runner.os }}-node-${{ hashFiles('**/pnpm.lock') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Installing Yarn and setting env
+      - name: Installing Pnpm and setting env
         run: |
           npm install -g pnpm
           npm config set "@broadlume:registry" "https://npm.pkg.github.com"
@@ -90,7 +90,7 @@ jobs:
           git status
 
       - name: Install dependencies
-        run: pnpm
+        run: pnpm install
 
       # - name: Install Playwright
       #   id: install-playwright
@@ -103,7 +103,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           git status
-          yarn test --update-snapshots
+          pnpm test --update-snapshots
           git status
 
       - name: Commit and push updated snapshots
