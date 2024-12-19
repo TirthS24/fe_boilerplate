@@ -101,21 +101,21 @@ jobs:
         with:
           path: |
             node_modules
-            ~/.cache/pnpm
-            pnpm.lock
-          key: ${{ runner.os }}-node-${{ hashFiles('**/pnpm.lock') }}
+            ~/.cache/yarn
+            yarn.lock
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Installing Pnpm and setting env
+      - name: Installing Yarn and setting env
         run: |
-          npm install -g pnpm
+          npm install -g yarn
           npm config set "@broadlume:registry" "https://npm.pkg.github.com"
           npm config set "//npm.pkg.github.com/:_authToken" "${{ secrets.NPM_TOKEN }}"
           git status
 
       - name: Install dependencies
-        run: pnpm install
+        run: yarn
 
       # - name: Install Playwright
       #   id: install-playwright
@@ -128,7 +128,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           git status
-          pnpm exec run test 
+          yarn test --update-snapshots 
           git status
 
       - name: Commit and push updated snapshots
