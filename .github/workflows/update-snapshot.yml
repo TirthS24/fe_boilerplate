@@ -103,7 +103,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           git status
-          pnpm test --update-snapshots
+          pnpm run test 
           git status
 
       - name: Commit and push updated snapshots
