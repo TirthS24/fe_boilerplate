@@ -84,13 +84,13 @@ jobs:
 
       - name: Installing Yarn and setting env
         run: |
-          npm install -g yarn
+          npm install -g pnpm
           npm config set "@broadlume:registry" "https://npm.pkg.github.com"
           npm config set "//npm.pkg.github.com/:_authToken" "${{ secrets.NPM_TOKEN }}"
           git status
 
       - name: Install dependencies
-        run: yarn
+        run: pnpm
 
       # - name: Install Playwright
       #   id: install-playwright
